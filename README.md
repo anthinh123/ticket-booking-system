@@ -1,13 +1,13 @@
 # System Requirements Document: High-Concurrency Ticketing Platform
 
-## 1. Executive Summary & Business Goals
-*This section defines the strategic value of the system for executive stakeholders. The architecture proposed below exists solely to guarantee these business outcomes.*
+## 1. Business Vision & Scope
+An ambitious new tech startup is eager to disrupt the event ticketing space by developing a high-capacity, highly concurrent booking platform. The business aims to create a lightning-fast system that handles massive flash-sale traffic spikes and mathematically guarantees zero double-booked seats, ensuring a fair experience for fans.
 
-* **1.1. Protect Brand Reputation (Zero-Defect Guarantee):** The system must mathematically guarantee absolute fairness and zero double-bookings. Selling the same ticket to two different people destroys customer trust and brand value.
-* **1.2. Maximize Revenue Capture During Peak Demand:** Flash sales generate massive revenue in minutes. The platform must flawlessly process thousands of transactions per second to capture maximum revenue before user intent fades, preventing revenue loss due to system crashes.
-* **1.3. Eliminate Revenue Leakage (Abandoned Cart Mitigation):** Implement strict, automated time-limits on checkout windows (e.g., 10 minutes). If a transaction is not financially cleared, the asset must automatically return to the market for the next paying customer, ensuring 100% inventory sell-through.
-* **1.4. Operational Efficiency & Support Cost Reduction:** By providing a transparent "waiting room" experience and eliminating system crashes, the architecture will drastically reduce the volume of incoming customer support tickets.
-* **1.5. Establish Market Leadership:** Flawless execution during extreme load is a core competitive advantage, allowing the business to acquire larger, more prestigious event contracts in the future.
+The system is a streamlined solution for two primary categories of users: 
+* **Buyers (Fans):** Require a real-time Booking Portal that displays interactive seat availability and provides a guaranteed 10-minute isolated checkout window.
+* **Event Organizers:** Require a lightweight Organizer Dashboard that displays real-time sales velocity, available inventory, and automated payment resolutions in a single view.
+
+**Competitive Advantage:** The platform provides enterprise-grade reliability at a fraction of standard operational costs by utilizing lean, high-performance technologies (like Redis for distributed locking). To maintain a fast time-to-market, the platform integrates seamlessly with existing API providers (Stripe, Twilio) rather than building custom payment or notification infrastructure.
 
 ---
 

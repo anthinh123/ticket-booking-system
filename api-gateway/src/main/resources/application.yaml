@@ -1,3 +1,29 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: api-gateway
+#  cloud:
+#    gateway:
+#      routes:
+#        - id: identity-service-yaml
+#          uri: http://127.0.0.1:8081
+#          predicates:
+#            - Path=/identity/**
+#          filters:
+#            - StripPrefix=1
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.security: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: gateway
+
+jwt:
+  signerKey: "Wo2ttfkP0abiILdO2W6ntIlOqtCXIUtuGqex/buD35iSyKMWt3YQ5q5LkkCEwNL67WLZqeoqXkhM65n3ZCCZnA=="

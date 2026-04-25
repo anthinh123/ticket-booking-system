@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  # 1. The Database Service
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: ticket-booking-db
+    environment:
+      - POSTGRES_USER=thinh
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=ticket_booking_db
+    ports:
+      - "5432:5432" # Allows DBeaver to connect from your Mac
+    volumes:
+      - postgres-data:/var/lib/postgresql/data # Saves data if container restarts
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U thinh -d ticket_booking_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  ticketing-network:
+    driver: bridge
+
+volumes:
+  postgres-data:

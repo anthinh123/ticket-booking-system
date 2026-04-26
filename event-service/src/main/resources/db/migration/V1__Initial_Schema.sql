@@ -1,6 +1,6 @@
 -- Events Table (The ONLY table owned by event-service)
 CREATE TABLE IF NOT EXISTS events (
-    event_id BIGINT PRIMARY KEY,
+    event_id BIGSERIAL PRIMARY KEY,
     event_name VARCHAR(255) NOT NULL,
     event_date TIMESTAMP NOT NULL,
     venue_name VARCHAR(255),

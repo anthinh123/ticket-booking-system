@@ -79,6 +79,7 @@ public class AuthenticationService {
                 .issueTime(new Date())
                 .expirationTime(new Date(
                         Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
+                .claim("userId", user.getId())
                 .claim("scope", buildScope(user))
                 .build();
 

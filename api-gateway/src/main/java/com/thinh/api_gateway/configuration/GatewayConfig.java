@@ -18,6 +18,9 @@ public class GatewayConfig {
                 .route("identity-service", r -> r.path("/identity/**")
                         .filters(f -> f.stripPrefix(1))
                         .uri("http://127.0.0.1:8081"))
+                .route("event-service", r -> r.path("/event/**")
+                        .filters(f -> f.stripPrefix(1))
+                        .uri("http://127.0.0.1:8082"))
                 .build();
     }
 

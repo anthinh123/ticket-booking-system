@@ -9,9 +9,10 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=ticket_booking_db
     ports:
-      - "5432:5432" # Allows DBeaver to connect from your Mac
+      - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data # Saves data if container restarts
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U thinh -d ticket_booking_db" ]
       interval: 10s

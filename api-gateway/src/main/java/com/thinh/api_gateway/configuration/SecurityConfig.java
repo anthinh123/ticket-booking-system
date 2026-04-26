@@ -19,7 +19,8 @@ public class SecurityConfig {
 
     private final String[] PUBLIC_ENDPOINTS = {
             "/identity/auth/login", "/identity/auth/register",
-            "/identity/auth/**"
+            "/identity/auth/**",
+            "/event/**"
     };
 
     @Value("${jwt.signerKey}")
@@ -28,7 +29,7 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http.authorizeExchange(exchanges ->
-                exchanges.pathMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                exchanges.pathMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .anyExchange().authenticated());
 
         http.oauth2ResourceServer(oauth2 ->

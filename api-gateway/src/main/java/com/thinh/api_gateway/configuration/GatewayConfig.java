@@ -21,6 +21,9 @@ public class GatewayConfig {
                 .route("event-service", r -> r.path("/event/**")
                         .filters(f -> f.stripPrefix(1))
                         .uri("http://127.0.0.1:8082"))
+                .route("inventory-service", r -> r.path("/inventory/**")
+                        .filters(f -> f.stripPrefix(1))
+                        .uri("http://127.0.0.1:8083"))
                 .build();
     }
 

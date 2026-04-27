@@ -35,8 +35,9 @@ public class Seat {
     @Column(nullable = false)
     private BigDecimal price;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private SeatStatus status;
 
     @Version
     private Long version;

@@ -18,6 +18,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - ticketing-network
+
+  # 2. Redis for Distributed Locking
+  redis:
+    image: redis:7-alpine
+    container_name: ticketing-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ticketing-network
+
 
 networks:
   ticketing-network:

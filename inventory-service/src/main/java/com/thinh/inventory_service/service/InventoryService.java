@@ -27,7 +27,7 @@ public class InventoryService {
     private Duration lockDuration;
 
     @Transactional
-    public void reservation(Long seatId, String userId) {
+    public Reservation reservation(Long seatId, String userId) {
         // 1. Acquire Redis Lock (Duration matches the business TTL)
         boolean isLockAcquired = redisLockService.acquireSeatLock(seatId, userId);
         
@@ -60,7 +60,7 @@ public class InventoryService {
                     .status("ACTIVE")
                     .build();
             
-            reservationRepository.save(reservation);
+            return reservationRepository.save(reservation);
             
             // NOTE: We DO NOT release the Redis lock here. 
             // It will stay in Redis for 10 minutes (or until payment is successful).

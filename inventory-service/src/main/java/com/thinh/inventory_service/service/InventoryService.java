@@ -9,6 +9,9 @@ import com.thinh.inventory_service.repository.ReservationRepository;
 import com.thinh.inventory_service.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,4 +78,5 @@ public class InventoryService {
             throw new ReservationFailureException(ErrorCode.RESERVATION_FAILED);
         }
     }
+
 }

@@ -18,7 +18,6 @@ public class SeatCleanupService {
     // Runs every 10 minute to keep the seat map fresh
     @Scheduled(fixedRate = 600000)
     public void cleanup() {
-        System.out.println("thinhav cleanup");
         int count = seatRepository.releaseExpiredSeats(LocalDateTime.now());
         if (count > 0) {
             log.info("Successfully released {} stale reservations back to AVAILABLE", count);

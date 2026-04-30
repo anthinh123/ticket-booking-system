@@ -1,6 +1,6 @@
-package com.thinh.inventory_service.exception;
+package com.thinh.booking_service.exception;
 
-import com.thinh.inventory_service.dto.response.ApiResponse;
+import com.thinh.booking_service.dto.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

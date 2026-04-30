@@ -8,18 +8,18 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/seats")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class SeatController {
     
     private final SeatRepository seatRepository;
 
-    @GetMapping("/event/{eventId}")
+    @GetMapping("/events/{eventId}/seats")
     public List<Seat> getSeatsByEvent(@PathVariable Long eventId) {
         return seatRepository.findByEventId(eventId);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/seats/{id}")
     public Seat getSeatById(@PathVariable Long id) {
         return seatRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("SEAT_NOT_FOUND"));

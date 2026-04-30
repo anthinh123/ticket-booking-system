@@ -15,15 +15,14 @@ public class GatewayConfig {
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
-                .route("identity-service", r -> r.path("/identity/**")
-                        .filters(f -> f.stripPrefix(1))
+                .route("identity-service", r -> r.path("/api/v1/auth/**", "/api/v1/users/**")
                         .uri("http://127.0.0.1:8081"))
-                .route("event-service", r -> r.path("/event/**")
-                        .filters(f -> f.stripPrefix(1))
-                        .uri("http://127.0.0.1:8082"))
-                .route("inventory-service", r -> r.path("/inventory/**")
-                        .filters(f -> f.stripPrefix(1))
+                .route("inventory-service-seats", r -> r.path("/api/v1/events/*/seats", "/api/v1/seats/**", "/api/v1/reservations/**")
                         .uri("http://127.0.0.1:8083"))
+                .route("event-service", r -> r.path("/api/v1/events/**")
+                        .uri("http://127.0.0.1:8082"))
+                .route("booking-service", r -> r.path("/api/v1/bookings/**")
+                        .uri("http://127.0.0.1:8084"))
                 .build();
     }
 

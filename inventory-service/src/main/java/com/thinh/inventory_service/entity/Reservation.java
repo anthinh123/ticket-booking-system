@@ -32,6 +32,9 @@ public class Reservation {
     @Column(nullable = false)
     private String status;
 
+    @Column(nullable = false)
+    private java.math.BigDecimal price;
+
     @Column(name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 }

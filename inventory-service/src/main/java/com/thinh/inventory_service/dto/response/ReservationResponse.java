@@ -14,4 +14,5 @@ public class ReservationResponse {
     Long seatId;
     String status;
     LocalDateTime expiresAt;
+    java.math.BigDecimal price;
 }

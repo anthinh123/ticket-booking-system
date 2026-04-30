@@ -8,6 +8,8 @@ import com.thinh.inventory_service.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/reservations")
 @RequiredArgsConstructor
@@ -16,22 +18,25 @@ public class ReservationController {
     private final InventoryService inventoryService;
 
     @PostMapping
-    public ApiResponse<ReservationResponse> createReservation(
+    public ApiResponse<List<ReservationResponse>> createReservation(
             @RequestBody ReservationRequest request,
             @RequestHeader("X-User-Id") String userId) {
         
-        Reservation reservation = inventoryService.reservation(request.getSeatId(), userId);
+        List<Reservation> reservations = inventoryService.reservations(request.getSeatIds(), userId);
         
-        ReservationResponse response = ReservationResponse.builder()
-                .reservationId(reservation.getId())
-                .seatId(reservation.getSeatId())
-                .status(reservation.getStatus())
-                .expiresAt(reservation.getExpiresAt())
-                .build();
+        List<ReservationResponse> responses = reservations.stream()
+                .map(reservation -> ReservationResponse.builder()
+                        .reservationId(reservation.getId())
+                        .seatId(reservation.getSeatId())
+                        .status(reservation.getStatus())
+                        .expiresAt(reservation.getExpiresAt())
+                        .price(reservation.getPrice())
+                        .build())
+                .toList();
         
-        return ApiResponse.<ReservationResponse>builder()
+        return ApiResponse.<List<ReservationResponse>>builder()
                 .message("Reservation successful")
-                .result(response)
+                .result(responses)
                 .build();
     }
 }

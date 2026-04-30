@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,53 +32,61 @@ public class InventoryService {
     private Duration lockDuration;
 
     @Transactional
-    public Reservation reservation(Long seatId, String userId) {
-        // 1. Acquire Redis Lock (Duration matches the business TTL)
-        boolean isLockAcquired = redisLockService.acquireSeatLock(seatId, userId);
-        
-        if (!isLockAcquired) {
+    public List<Reservation> reservations(List<Long> seatIds, String userId) {
+        List<Long> acquiredLocks = new ArrayList<>();
+        try {
+            List<Reservation> results = new ArrayList<>();
+            for (Long seatId : seatIds) {
+                results.add(reserveSingleSeat(seatId, userId, acquiredLocks));
+            }
+            return results;
+        } catch (Exception e) {
+            rollbackRedisLocks(acquiredLocks);
+            throw e;
+        }
+    }
+
+    private Reservation reserveSingleSeat(Long seatId, String userId, List<Long> acquiredLocks) {
+        // 1. Acquire Redis Lock
+        if (!redisLockService.acquireSeatLock(seatId, userId)) {
             throw new ReservationFailureException(ErrorCode.LOCK_ACQUISITION_FAILED);
         }
+        acquiredLocks.add(seatId);
 
-        try {
-            // Find the seat to get the eventId (needed for Reservation record)
-            Seat seat = seatRepository.findById(seatId)
-                    .orElseThrow(() -> new ReservationFailureException(ErrorCode.SEAT_NOT_FOUND));
+        // 2. Fetch Seat
+        Seat seat = seatRepository.findById(seatId)
+                .orElseThrow(() -> new ReservationFailureException(ErrorCode.SEAT_NOT_FOUND));
 
-            LocalDateTime expiresAt = LocalDateTime.now().plus(lockDuration);
+        // 3. Update Status
+        LocalDateTime expiresAt = LocalDateTime.now().plus(lockDuration);
+        int updatedRows = seatRepository.reserveSeatIfAvailable(seatId, SeatStatus.RESERVED, userId, expiresAt);
 
-            // 2. Perform Atomic Update on Seat Status
-            int updatedRows = seatRepository.reserveSeatIfAvailable(seatId, SeatStatus.RESERVED, userId, expiresAt);
-
-            if (updatedRows == 0) {
-                // If update failed, another user beat us or seat is not AVAILABLE
-                redisLockService.releaseSeatLock(seatId);
-                throw new ReservationFailureException(ErrorCode.SEAT_ALREADY_RESERVED);
-            }
-
-            // 3. Create a record in the Reservations table
-            Reservation reservation = Reservation.builder()
-                    .seatId(seatId)
-                    .eventId(seat.getEventId())
-                    .userId(userId)
-                    .expiresAt(expiresAt)
-                    .status("ACTIVE")
-                    .build();
-            
-            return reservationRepository.save(reservation);
-            
-            // NOTE: We DO NOT release the Redis lock here. 
-            // It will stay in Redis for 10 minutes (or until payment is successful).
-
-        } catch (Exception e) {
-            // 4. On ANY error, we must release the Redis lock so others can try
-            redisLockService.releaseSeatLock(seatId);
-            
-            if (e instanceof ReservationFailureException) {
-                throw e;
-            }
-            throw new ReservationFailureException(ErrorCode.RESERVATION_FAILED);
+        if (updatedRows == 0) {
+            throw new ReservationFailureException(ErrorCode.SEAT_ALREADY_RESERVED);
         }
+
+        // 4. Save Reservation
+        Reservation reservation = Reservation.builder()
+                .seatId(seatId)
+                .eventId(seat.getEventId())
+                .userId(userId)
+                .expiresAt(expiresAt)
+                .status("ACTIVE")
+                .price(seat.getPrice())
+                .build();
+
+        return reservationRepository.save(reservation);
+    }
+
+    private void rollbackRedisLocks(List<Long> acquiredLocks) {
+        for (Long lockedId : acquiredLocks) {
+            redisLockService.releaseSeatLock(lockedId);
+        }
+    }
+
+    @Transactional
+    public Reservation reservation(Long seatId, String userId) {
+        return reservations(List.of(seatId), userId).get(0);
     }
 
 }

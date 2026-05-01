@@ -114,8 +114,8 @@ public class BookingService {
     }
 
     @Transactional
-    public Booking payBooking(Long bookingId, PayBookingRequest request, String userId) {
-        Booking booking = bookingRepository.findById(bookingId)
+    public Booking payBooking(PayBookingRequest request, String userId) {
+        Booking booking = bookingRepository.findByBookingReference(request.getBookingReference())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
         if (!booking.getUserId().equals(userId)) {

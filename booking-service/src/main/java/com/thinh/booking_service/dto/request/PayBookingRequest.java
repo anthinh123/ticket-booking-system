@@ -7,5 +7,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PayBookingRequest {
+    private String bookingReference;
     private String paymentMethod;
 }

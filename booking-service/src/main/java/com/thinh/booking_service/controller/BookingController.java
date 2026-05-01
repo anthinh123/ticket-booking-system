@@ -1,6 +1,7 @@
 package com.thinh.booking_service.controller;
 
 import com.thinh.booking_service.dto.request.BookingRequest;
+import com.thinh.booking_service.dto.request.PayBookingRequest;
 import com.thinh.booking_service.dto.response.ApiResponse;
 import com.thinh.booking_service.entity.Booking;
 import com.thinh.booking_service.service.BookingService;
@@ -25,5 +26,15 @@ public class BookingController {
                 .build();
     }
 
-
+    @PostMapping("/{bookingId}/pay")
+    public ApiResponse<Booking> payBooking(
+            @PathVariable Long bookingId,
+            @RequestBody PayBookingRequest request,
+            @RequestHeader("X-User-Id") String userId) {
+        
+        return ApiResponse.<Booking>builder()
+                .message("Payment initialize successful")
+                .result(bookingService.payBooking(bookingId, request, userId))
+                .build();
+    }
 }

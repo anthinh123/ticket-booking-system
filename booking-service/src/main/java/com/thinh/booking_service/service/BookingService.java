@@ -1,8 +1,11 @@
 package com.thinh.booking_service.service;
 
+import com.thinh.booking_service.dto.external.PaymentRequest;
+import com.thinh.booking_service.dto.external.PaymentResponse;
 import com.thinh.booking_service.dto.external.ReservationRequest;
 import com.thinh.booking_service.dto.external.ReservationResponse;
 import com.thinh.booking_service.dto.request.BookingRequest;
+import com.thinh.booking_service.dto.request.PayBookingRequest;
 import com.thinh.booking_service.dto.response.ApiResponse;
 import com.thinh.booking_service.entity.Booking;
 import com.thinh.booking_service.entity.BookingSeat;
@@ -33,6 +36,7 @@ public class BookingService {
     private final RestTemplate restTemplate;
 
     private final String RESERVATION_URL = "http://127.0.0.1:8083/api/v1/reservations";
+    private final String PAYMENT_URL = "http://127.0.0.1:8085/api/v1/payments";
 
     @Transactional
     public Booking createBooking(BookingRequest request, String userId) {
@@ -109,5 +113,48 @@ public class BookingService {
         booking.setTotalAmount(total);
     }
 
+    @Transactional
+    public Booking payBooking(Long bookingId, PayBookingRequest request, String userId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
+        if (!booking.getUserId().equals(userId)) {
+            throw new AppException(ErrorCode.BOOKING_NOT_FOUND);
+        }
+
+        if (!"PENDING".equals(booking.getStatus())) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+
+        // Call Payment Service (Initialization)
+        PaymentResponse paymentResponse = callPaymentService(booking, request.getPaymentMethod());
+        booking.setPaymentId(paymentResponse.getPaymentId());
+
+        return bookingRepository.save(booking);
+    }
+
+    private PaymentResponse callPaymentService(Booking booking, String paymentMethod) {
+        PaymentRequest paymentRequest = PaymentRequest.builder()
+                .bookingId(booking.getId())
+                .amount(booking.getTotalAmount())
+                .paymentMethod(paymentMethod)
+                .build();
+
+        try {
+            ApiResponse<PaymentResponse> response = restTemplate.exchange(
+                    PAYMENT_URL,
+                    HttpMethod.POST,
+                    new HttpEntity<>(paymentRequest),
+                    new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {}
+            ).getBody();
+
+            if (response == null || response.getResult() == null || !"SUCCESS".equals(response.getResult().getStatus())) {
+                throw new AppException(ErrorCode.PAYMENT_FAILED);
+            }
+
+            return response.getResult();
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.PAYMENT_FAILED);
+        }
+    }
 }

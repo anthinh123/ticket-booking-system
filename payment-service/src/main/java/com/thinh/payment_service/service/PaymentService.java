@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -26,7 +27,7 @@ public class PaymentService {
         String paymentId = "PAY-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         // Start async simulation
-        simulateAndNotify(request.getBookingId(), paymentId);
+        CompletableFuture.runAsync(() -> simulateAndNotify(request.getBookingId(), paymentId));
 
         return PaymentResponse.builder()
                 .paymentId(paymentId)
@@ -35,8 +36,7 @@ public class PaymentService {
                 .build();
     }
 
-    @Async
-    public void simulateAndNotify(Long bookingId, String paymentId) {
+    private void simulateAndNotify(Long bookingId, String paymentId) {
         // Simulate processing delay (5-10 seconds)
         int delay = new Random().nextInt(5000) + 5000;
         try {

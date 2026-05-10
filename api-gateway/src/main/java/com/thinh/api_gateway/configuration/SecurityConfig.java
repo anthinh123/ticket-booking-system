@@ -18,8 +18,8 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig {
 
     private final String[] PUBLIC_ENDPOINTS = {
-            "/identity/auth/login", "/identity/auth/register",
-            "/identity/auth/**"
+            "/api/v1/auth/login", "/api/v1/auth/register",
+            "/api/v1/auth/**"
     };
 
     @Value("${jwt.signerKey}")
@@ -30,10 +30,10 @@ public class SecurityConfig {
         http.authorizeExchange(exchanges ->
                 exchanges
                         .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .pathMatchers(HttpMethod.GET, "/event/**").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/event/**").hasAuthority("SCOPE_ADMIN")
-                        .pathMatchers(HttpMethod.PUT, "/event/**").hasAuthority("SCOPE_ADMIN")
-                        .pathMatchers(HttpMethod.DELETE, "/event/**").hasAuthority("SCOPE_ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/v1/events/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/v1/events/**").hasAuthority("SCOPE_ADMIN")
+                        .pathMatchers(HttpMethod.PUT, "/api/v1/events/**").hasAuthority("SCOPE_ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/api/v1/events/**").hasAuthority("SCOPE_ADMIN")
                         .anyExchange().authenticated());
 
         http.oauth2ResourceServer(oauth2 ->

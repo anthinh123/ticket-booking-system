@@ -28,4 +28,9 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     @Query("UPDATE Seat s SET s.status = com.thinh.inventory_service.entity.SeatStatus.AVAILABLE, s.reservedBy = NULL, s.reservedUntil = NULL " +
             "WHERE s.status = com.thinh.inventory_service.entity.SeatStatus.RESERVED AND s.reservedUntil < :now")
     int releaseExpiredSeats(@Param("now") LocalDateTime now);
+    @Modifying
+    @Transactional
+    @Query("UPDATE Seat s SET s.status = :status, s.reservedUntil = NULL " +
+            "WHERE s.id IN :seatIds")
+    int updateStatusByIds(@Param("seatIds") List<Long> seatIds, @Param("status") SeatStatus status);
 }

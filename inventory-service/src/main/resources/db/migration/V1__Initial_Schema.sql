@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     user_id VARCHAR(50) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     status VARCHAR(50) DEFAULT 'ACTIVE',
+    price DECIMAL(10,2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

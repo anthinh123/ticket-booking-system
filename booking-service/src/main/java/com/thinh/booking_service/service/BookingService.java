@@ -148,7 +148,7 @@ public class BookingService {
                     new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {}
             ).getBody();
 
-            if (response == null || response.getResult() == null || !"SUCCESS".equals(response.getResult().getStatus())) {
+            if (response == null || response.getResult() == null || !"INITIATED".equals(response.getResult().getStatus())) {
                 throw new AppException(ErrorCode.PAYMENT_FAILED);
             }
 

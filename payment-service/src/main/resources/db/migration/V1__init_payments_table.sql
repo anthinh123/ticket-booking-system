@@ -1,0 +1,8 @@
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    booking_id BIGINT NOT NULL UNIQUE,
+    payment_id VARCHAR(50) NOT NULL UNIQUE,
+    amount DECIMAL(19, 2) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

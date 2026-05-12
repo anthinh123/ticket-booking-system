@@ -1,5 +1,7 @@
 package com.thinh.booking_service.service;
 
+import com.thinh.booking_service.constant.BookingStatus;
+import com.thinh.booking_service.constant.PaymentStatus;
 import com.thinh.booking_service.dto.event.BookingEvent;
 import com.thinh.booking_service.dto.external.PaymentEvent;
 import com.thinh.booking_service.entity.Booking;
@@ -38,13 +40,13 @@ public class PaymentEventListener {
             return;
         }
 
-        if (!"PENDING".equals(booking.getStatus())) {
+        if (BookingStatus.PENDING != booking.getStatus()) {
             log.warn("Booking {} is already in status: {}", booking.getId(), booking.getStatus());
             return;
         }
 
-        booking.setStatus("CONFIRMED");
-        booking.setPaymentStatus("SUCCESS");
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setPaymentStatus(PaymentStatus.SUCCESS);
         booking.setConfirmedAt(event.getTimestamp());
 
         bookingRepository.save(booking);

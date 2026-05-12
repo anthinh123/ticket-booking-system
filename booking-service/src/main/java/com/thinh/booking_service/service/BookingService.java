@@ -1,5 +1,7 @@
 package com.thinh.booking_service.service;
 
+import com.thinh.booking_service.constant.BookingStatus;
+import com.thinh.booking_service.constant.PaymentStatus;
 import com.thinh.booking_service.dto.external.PaymentRequest;
 import com.thinh.booking_service.dto.external.PaymentResponse;
 import com.thinh.booking_service.dto.external.ReservationRequest;
@@ -87,7 +89,7 @@ public class BookingService {
                 .eventId(eventId)
                 .userId(userId)
                 .bookingReference(reference)
-                .status("PENDING")
+                .status(BookingStatus.PENDING)
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
@@ -122,7 +124,7 @@ public class BookingService {
             throw new AppException(ErrorCode.BOOKING_NOT_FOUND);
         }
 
-        if (!"PENDING".equals(booking.getStatus())) {
+        if (BookingStatus.PENDING != booking.getStatus()) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
 

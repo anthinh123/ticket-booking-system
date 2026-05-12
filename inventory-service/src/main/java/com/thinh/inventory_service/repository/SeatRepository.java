@@ -31,6 +31,6 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     @Modifying
     @Transactional
     @Query("UPDATE Seat s SET s.status = :status, s.reservedUntil = NULL " +
-            "WHERE s.id IN :seatIds")
+            "WHERE s.id IN :seatIds AND s.status = com.thinh.inventory_service.entity.SeatStatus.RESERVED")
     int updateStatusByIds(@Param("seatIds") List<Long> seatIds, @Param("status") SeatStatus status);
 }

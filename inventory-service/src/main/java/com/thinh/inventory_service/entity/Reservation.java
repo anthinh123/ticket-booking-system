@@ -20,9 +20,6 @@ public class Reservation {
     @Column(name = "seat_id", nullable = false)
     private Long seatId;
 
-    @Column(name = "booking_id")
-    private Long bookingId;
-
     @Column(name = "event_id", nullable = false)
     private Long eventId;
 

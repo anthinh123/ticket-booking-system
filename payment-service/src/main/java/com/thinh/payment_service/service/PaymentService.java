@@ -1,7 +1,5 @@
 package com.thinh.payment_service.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thinh.payment_service.dto.event.PaymentEvent;
 import com.thinh.payment_service.dto.request.PaymentRequest;
 import com.thinh.payment_service.dto.response.PaymentResponse;
@@ -10,6 +8,7 @@ import com.thinh.payment_service.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,14 +83,38 @@ public class PaymentService {
             return;
         }
 
+        // 20% chance of failure for Saga demo
+        boolean isSuccess = new Random().nextInt(100) < 80;
+
         PaymentEvent event = PaymentEvent.builder()
                 .bookingId(bookingId)
                 .paymentId(paymentId)
-                .status("SUCCESS")
+                .status(isSuccess ? "SUCCESS" : "FAILED")
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        log.info("Sending payment success event for booking {}: {}", bookingId, paymentId);
-        kafkaTemplate.send("payment-success", event);
+        String topic = isSuccess ? "payment-success" : "payment-failed";
+        log.info("Sending payment {} event for booking {}: {}", isSuccess ? "success" : "failure", bookingId, paymentId);
+        
+        // Update status in DB
+        paymentRepository.findByBookingId(bookingId).ifPresent(p -> {
+            p.setStatus(isSuccess ? "COMPLETED" : "FAILED");
+            paymentRepository.save(p);
+        });
+
+        kafkaTemplate.send(topic, event);
+    }
+
+    @KafkaListener(topics = "booking-update-failed", groupId = "payment-group")
+    public void handleBookingUpdateFailed(PaymentEvent event) {
+        log.info("SAGA COMPENSATION: Received booking-update-failed for booking {}. Initiating REFUND...", event.getBookingId());
+        
+        // Simulate Refund Logic
+        log.info("REFUND SUCCESSFUL: ${} has been returned to user for booking {}", "XX.XX", event.getBookingId());
+        
+        paymentRepository.findByBookingId(event.getBookingId()).ifPresent(p -> {
+            p.setStatus("REFUNDED");
+            paymentRepository.save(p);
+        });
     }
 }

@@ -4,6 +4,7 @@ import com.thinh.booking_service.constant.BookingStatus;
 import com.thinh.booking_service.constant.PaymentStatus;
 import com.thinh.booking_service.dto.event.BookingEvent;
 import com.thinh.booking_service.dto.event.InventoryReleaseEvent;
+import com.thinh.booking_service.dto.event.PaymentRefundEvent;
 import com.thinh.booking_service.dto.external.PaymentEvent;
 import com.thinh.booking_service.entity.Booking;
 import com.thinh.booking_service.entity.BookingSeat;
@@ -11,8 +12,8 @@ import com.thinh.booking_service.repository.BookingRepository;
 import com.thinh.booking_service.repository.BookingSeatRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +27,7 @@ public class PaymentEventListener {
 
     private final BookingRepository bookingRepository;
     private final BookingSeatRepository bookingSeatRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     @KafkaListener(topics = "payment-success", groupId = "booking-group")
     @Transactional
@@ -67,18 +68,23 @@ public class PaymentEventListener {
                     .build();
 
             log.info("Publishing booking-success event for booking ID: {}", booking.getId());
-            kafkaTemplate.send("booking-success", bookingEvent);
+            eventPublisher.publishEvent(bookingEvent);
         } catch (Exception e) {
             log.error("Failed to confirm booking {}. ORCHESTRATING COMPENSATION...", booking.getId());
             
             List<Long> seatIds = bookingSeatRepository.findAllByBookingId(booking.getId())
                     .stream().map(BookingSeat::getSeatId).collect(Collectors.toList());
 
-            // 1. Notify Inventory to release seats
-            kafkaTemplate.send("inventory-release", new InventoryReleaseEvent(booking.getId(), seatIds, "BOOKING_CONFIRMATION_FAILED"));
+            // 1. Notify Inventory to release seats (via Modulith Outbox)
+            eventPublisher.publishEvent(new InventoryReleaseEvent(booking.getId(), seatIds, "BOOKING_CONFIRMATION_FAILED"));
             
-            // 2. Notify Payment to refund
-            kafkaTemplate.send("payment-refund", event);
+            // 2. Notify Payment to refund (via Modulith Outbox)
+            eventPublisher.publishEvent(PaymentRefundEvent.builder()
+                    .bookingId(event.getBookingId())
+                    .paymentId(event.getPaymentId())
+                    .status("REFUND")
+                    .timestamp(java.time.LocalDateTime.now())
+                    .build());
             
             throw e; // Rollback transaction
         }
@@ -97,9 +103,9 @@ public class PaymentEventListener {
             List<Long> seatIds = bookingSeatRepository.findAllByBookingId(booking.getId())
                     .stream().map(BookingSeat::getSeatId).collect(Collectors.toList());
 
-            // Orchestrate Inventory release
+            // Orchestrate Inventory release (via Modulith Outbox)
             log.info("ORCHESTRATOR: Sending inventory-release for booking {} with seats {}", booking.getId(), seatIds);
-            kafkaTemplate.send("inventory-release", new InventoryReleaseEvent(booking.getId(), seatIds, "PAYMENT_FAILED"));
+            eventPublisher.publishEvent(new InventoryReleaseEvent(booking.getId(), seatIds, "PAYMENT_FAILED"));
         });
     }
 }

@@ -1,17 +1,20 @@
 package com.thinh.payment_service.service;
 
 import com.thinh.payment_service.dto.event.PaymentEvent;
+import com.thinh.payment_service.dto.event.PaymentSuccessEvent;
+import com.thinh.payment_service.dto.event.PaymentFailedEvent;
 import com.thinh.payment_service.dto.request.PaymentRequest;
 import com.thinh.payment_service.dto.response.PaymentResponse;
 import com.thinh.payment_service.entity.Payment;
 import com.thinh.payment_service.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -24,8 +27,9 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class PaymentService {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final ApplicationEventPublisher eventPublisher;
     private final PaymentRepository paymentRepository;
+    private final TransactionTemplate transactionTemplate;
 
     @Transactional
     public PaymentResponse processPayment(PaymentRequest request) {
@@ -86,35 +90,50 @@ public class PaymentService {
         // 20% chance of failure for Saga demo
         boolean isSuccess = new Random().nextInt(100) < 80;
 
-        PaymentEvent event = PaymentEvent.builder()
-                .bookingId(bookingId)
-                .paymentId(paymentId)
-                .status(isSuccess ? "SUCCESS" : "FAILED")
-                .timestamp(LocalDateTime.now())
-                .build();
+        log.info("Completing payment {} in transaction for booking {}: {}", isSuccess ? "success" : "failure", bookingId, paymentId);
 
-        String topic = isSuccess ? "payment-success" : "payment-failed";
-        log.info("Sending payment {} event for booking {}: {}", isSuccess ? "success" : "failure", bookingId, paymentId);
-        
-        // Update status in DB
-        paymentRepository.findByBookingId(bookingId).ifPresent(p -> {
-            p.setStatus(isSuccess ? "COMPLETED" : "FAILED");
-            paymentRepository.save(p);
+        transactionTemplate.execute(status -> {
+            // Update status in DB
+            paymentRepository.findByBookingId(bookingId).ifPresent(p -> {
+                p.setStatus(isSuccess ? "COMPLETED" : "FAILED");
+                paymentRepository.save(p);
+            });
+
+            // Publish Outbox Event using Spring Modulith
+            if (isSuccess) {
+                PaymentSuccessEvent successEvent = PaymentSuccessEvent.builder()
+                        .bookingId(bookingId)
+                        .paymentId(paymentId)
+                        .status("SUCCESS")
+                        .timestamp(LocalDateTime.now())
+                        .build();
+                eventPublisher.publishEvent(successEvent);
+            } else {
+                PaymentFailedEvent failedEvent = PaymentFailedEvent.builder()
+                        .bookingId(bookingId)
+                        .paymentId(paymentId)
+                        .status("FAILED")
+                        .timestamp(LocalDateTime.now())
+                        .build();
+                eventPublisher.publishEvent(failedEvent);
+            }
+            return null;
         });
-
-        kafkaTemplate.send(topic, event);
     }
 
     @KafkaListener(topics = "booking-update-failed", groupId = "payment-group")
     public void handleBookingUpdateFailed(PaymentEvent event) {
         log.info("SAGA COMPENSATION: Received booking-update-failed for booking {}. Initiating REFUND...", event.getBookingId());
-        
+
         // Simulate Refund Logic
         log.info("REFUND SUCCESSFUL: ${} has been returned to user for booking {}", "XX.XX", event.getBookingId());
-        
-        paymentRepository.findByBookingId(event.getBookingId()).ifPresent(p -> {
-            p.setStatus("REFUNDED");
-            paymentRepository.save(p);
+
+        transactionTemplate.execute(status -> {
+            paymentRepository.findByBookingId(event.getBookingId()).ifPresent(p -> {
+                p.setStatus("REFUNDED");
+                paymentRepository.save(p);
+            });
+            return null;
         });
     }
 }

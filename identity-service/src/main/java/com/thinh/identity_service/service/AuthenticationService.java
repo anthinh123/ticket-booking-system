@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import java.util.StringJoiner;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class AuthenticationService {
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
@@ -41,14 +43,21 @@ public class AuthenticationService {
     protected long VALID_DURATION;
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        log.info("Processing authentication for email: {}", request.getEmail());
         var user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("USER_NOT_EXISTED"));
+                .orElseThrow(() -> {
+                    log.warn("Authentication failed: email {} not found", request.getEmail());
+                    return new RuntimeException("USER_NOT_EXISTED");
+                });
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
-        if (!authenticated)
+        if (!authenticated) {
+            log.warn("Authentication failed: invalid password for email {}", request.getEmail());
             throw new RuntimeException("UNAUTHENTICATED");
+        }
 
+        log.info("Authentication successful for email: {}, generating token", request.getEmail());
         var token = generateToken(user);
 
         return AuthenticationResponse.builder()
@@ -58,8 +67,11 @@ public class AuthenticationService {
     }
 
     public User register(UserCreationRequest request) {
-        if (userRepository.existsByEmail(request.getEmail()))
+        log.info("Registering user with email: {}", request.getEmail());
+        if (userRepository.existsByEmail(request.getEmail())) {
+            log.warn("Registration failed: user with email {} already exists", request.getEmail());
             throw new RuntimeException("USER_EXISTED");
+        }
 
         User user = User.builder()
                 .email(request.getEmail())
@@ -67,7 +79,9 @@ public class AuthenticationService {
                 .roles(new HashSet<>(Set.of(Role.USER))) // Default role USER
                 .build();
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        log.info("User registered successfully with ID: {}", savedUser.getId());
+        return savedUser;
     }
 
     private String generateToken(User user) {

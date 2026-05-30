@@ -18,3 +18,19 @@ spring:
     schemas: public
     locations: classpath:db/migration
     connect-retries: 10
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:}, traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+  endpoints:
+    web:
+      exposure:
+        include: "*"

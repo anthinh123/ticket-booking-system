@@ -31,7 +31,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(csrf -> csrf.disable());
         httpSecurity.authorizeHttpRequests(request ->
-                request.requestMatchers("/api/v1/auth/**").permitAll()
+                request.requestMatchers("/api/v1/auth/**", "/actuator/**").permitAll()
                         .anyRequest().authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 ->

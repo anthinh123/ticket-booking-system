@@ -18,12 +18,24 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     org.springframework.security: DEBUG
+  pattern:
+    level: "%5p [${spring.application.name:}, traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: gateway
+  tracing:
+    sampling:
+      probability: 1.0 # Keep this at 100% for testing
+
+  # explicitly disable ALL metrics export to OTLP
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+    tracing:
+      # Explicitly set the trace endpoint (do NOT use the generic management.otlp.endpoint)
+      endpoint: http://localhost:4318/v1/traces
+      transport: http
 
 jwt:
   signerKey: "Wo2ttfkP0abiILdO2W6ntIlOqtCXIUtuGqex/buD35iSyKMWt3YQ5q5LkkCEwNL67WLZqeoqXkhM65n3ZCCZnA=="

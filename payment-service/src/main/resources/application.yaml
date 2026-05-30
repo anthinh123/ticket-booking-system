@@ -22,3 +22,23 @@ spring:
     enabled: true
     baseline-on-migrate: true
     schemas: public
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:}, traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0 # Keep this at 100% for testing
+
+  # explicitly disable ALL metrics export to OTLP
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+    tracing:
+      # Explicitly set the trace endpoint (do NOT use the generic management.otlp.endpoint)
+      endpoint: http://localhost:4318/v1/traces
+      transport: http

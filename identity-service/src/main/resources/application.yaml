@@ -20,3 +20,34 @@ jwt:
   signerKey: "Wo2ttfkP0abiILdO2W6ntIlOqtCXIUtuGqex/buD35iSyKMWt3YQ5q5LkkCEwNL67WLZqeoqXkhM65n3ZCCZnA=="
   valid-duration: 86400 # 24 hours in seconds
   refreshable-duration: 2592000 # 30 days in seconds
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:}, traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
+  level:
+    io.opentelemetry: DEBUG
+    io.micrometer.tracing: TRACE
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,prometheus" # Standard safety inclusions
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0  # Keep capturing 100% for testing
+  observations:
+    key-values:
+      application: identity-services
+
+  # explicitly disable ALL metrics export to OTLP
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+      transport: http
